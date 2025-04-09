@@ -1,3 +1,11 @@
 spring:
   application:
     name: job-portal-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/job_portal
+    username: postgres
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
