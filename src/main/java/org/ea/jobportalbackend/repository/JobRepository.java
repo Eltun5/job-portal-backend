@@ -14,10 +14,10 @@ import java.util.List;
 public interface JobRepository extends JpaRepository<Job, Long> {
 
     @Query("select distinct j.location from jobs j")
-    List<String> getDistinctLocation();
+    List<String> getDistinctLocations();
 
     @Query("select distinct j.industry from jobs j")
-    List<String> getDistinctIndustry();
+    List<String> getDistinctIndustries();
 
     @Query("""
            from jobs where
@@ -27,10 +27,11 @@ public interface JobRepository extends JpaRepository<Job, Long> {
            lower(industry) in :industries and
            lower(tags) in :tags
            """)
-    List<Job> getJobsByLocationAndJobTypeAndExperienceLevelAndIndustryAndTags(
-            List<String> locations, List<JobType> jobTypes,
-            List<ExperienceLevel> experienceLevels, List<String> industries,
-            List<Tag> tags);
+    List<Job> getJobsFiltered(List<String> locations,
+                              List<JobType> jobTypes,
+                              List<ExperienceLevel> experienceLevels,
+                              List<String> industries,
+                              List<Tag> tags);
 
 
 }
