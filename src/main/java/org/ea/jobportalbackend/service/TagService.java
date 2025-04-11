@@ -18,8 +18,12 @@ public class TagService {
         this.repository = repository;
     }
 
-    public void create(Tag tag){
+    public Tag create(Tag tag){
         repository.save(tag);
+        return repository.getTagByName(tag.getName()).orElseThrow(()->{
+            log.error("Cannot find a tag with this id.");
+            return new NoSuchElementException("Cannot find a tag with this id.");
+        });
     }
 
     public List<Tag> findAll(){
@@ -33,22 +37,20 @@ public class TagService {
         });
     }
 
-    public List<Tag> findAllById(List<Long> ids){
-        return repository.findAllById(ids);
-    }
-
-    public void update(Long id, Tag newTag){
+    public Tag update(Long id, Tag newTag){
         Tag oldTag = findById(id);
 
         oldTag.setName(newTag.getName());
         oldTag.setUpdateAt(Instant.now());
 
         repository.save(oldTag);
+
+        return findById(id);
     }
 
-    public void delete(Tag tag){
+    public void delete(Long id){
         log.warn("Someone try to delete tag!!!");
-        repository.delete(tag);
+        repository.delete(findById(id));
     }
 
 }

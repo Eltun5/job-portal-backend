@@ -22,7 +22,7 @@ public class Tag {
     @Column(name = "create_at")
     private Instant createAt;
 
-    @Column(name = "create_at")
+    @Column(name = "update_at")
     private Instant updateAt;
 
     @PrePersist

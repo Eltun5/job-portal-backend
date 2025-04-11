@@ -9,9 +9,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface JobRepository extends JpaRepository<Job, Long> {
+    Optional<Job> getJobByJobTitle(String title);
 
     @Query("select distinct j.location from jobs j")
     List<String> getDistinctLocations();
@@ -20,18 +22,29 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     List<String> getDistinctIndustries();
 
     @Query("""
-           from jobs where
-           lower(location) in :locations and
-           lower(jobType) in :jobTypes and
-           lower(experienceLevel) in :experienceLevels and
-           lower(industry) in :industries and
-           lower(tags) in :tags
-           """)
+            from jobs j where
+            j.location in :locations and
+            j.jobType in :jobTypes and
+            j.experienceLevel in :experienceLevels and
+            j.industry in :industries and
+            exists (select t from j.tags t where t.id in :tags)
+            """)
     List<Job> getJobsFiltered(List<String> locations,
                               List<JobType> jobTypes,
                               List<ExperienceLevel> experienceLevels,
                               List<String> industries,
-                              List<Tag> tags);
+                              List<Long> tags);
 
+    @Query("""
+            from jobs j where
+            j.location in :locations and
+            j.jobType in :jobTypes and
+            j.experienceLevel in :experienceLevels and
+            j.industry in :industries
+            """)
+    List<Job> getJobsFilteredWithoutTags(List<String> locations,
+                                         List<JobType> jobTypes,
+                                         List<ExperienceLevel> experienceLevels,
+                                         List<String> industries);
 
 }

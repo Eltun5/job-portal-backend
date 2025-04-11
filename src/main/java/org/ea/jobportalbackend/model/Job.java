@@ -15,6 +15,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 @Entity(name = "jobs")
 public class Job {
     @Id
@@ -30,6 +31,7 @@ public class Job {
     @Column(nullable = false)
     private String location;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "job_type")
     private JobType jobType;
 
@@ -46,10 +48,12 @@ public class Job {
     @Column(nullable = false)
     private List<String> requirements;
 
-    @Column(name = "experience_level")
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "experience_level")
     private ExperienceLevel experienceLevel;
 
-    @Column(name = "education_level")
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "education_level")
     private EducationLevel educationLevel;
 
     @Column(nullable = false)
