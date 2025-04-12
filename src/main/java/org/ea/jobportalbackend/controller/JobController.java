@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ public class JobController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Job> create(@ModelAttribute JobDTO dto,
-                                      @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
+                                      @RequestPart(value = "file", required = false) MultipartFile file) throws IOException, URISyntaxException {
         return ResponseEntity.ok(service.create(dto, file));
     }
 

@@ -41,7 +41,7 @@ public class Job {
     @Column(name = "max_salary")
     private BigDecimal maxSalary;
 
-    @Column(nullable = false, name = "job_description")
+    @Column(nullable = false, name = "job_description", length = 1000)
     private String jobDescription;
 
     @ElementCollection

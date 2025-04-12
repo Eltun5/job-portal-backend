@@ -1,13 +1,9 @@
 package org.ea.jobportalbackend.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.ea.jobportalbackend.dto.FilterOptions;
-import org.ea.jobportalbackend.dto.JobDTO;
-import org.ea.jobportalbackend.dto.JobResponseDTO;
-import org.ea.jobportalbackend.dto.SelectedFilters;
+import org.ea.jobportalbackend.dto.*;
 import org.ea.jobportalbackend.mapper.JobMapper;
 import org.ea.jobportalbackend.model.Job;
-import org.ea.jobportalbackend.model.Tag;
 import org.ea.jobportalbackend.model.enums.EducationLevel;
 import org.ea.jobportalbackend.model.enums.ExperienceLevel;
 import org.ea.jobportalbackend.model.enums.JobType;
@@ -16,6 +12,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,16 +38,46 @@ public class JobService {
         this.jobMapper = jobMapper;
     }
 
-    public Job create(JobDTO dto, MultipartFile logo) throws IOException {
+    public Job create(JobDTO dto, MultipartFile logo) throws IOException, URISyntaxException {
         Job job = jobMapper.toEntity(dto);
+
+        String defaultLogoURl =
+                "https://ui-avatars.com/api/?name=User&size=100&background=cccccc&color=ffffff";
+
         if (logo != null && !logo.isEmpty())
             job.setCompanyLogo(addLogo(logo));
+        else job.setCompanyLogo(downloadAndSaveLogoFromUrl(defaultLogoURl));
         repository.save(job);
 
         return repository.getJobByJobTitle(dto.jobTitle()).orElseThrow(() -> {
             log.error("Cannot find a job with this id.");
             return new NoSuchElementException("Cannot find a job with this id.");
         });
+    }
+
+    public void create(List<LoadJobDTO> loadJobDTOS) {
+        List<String> logoNames = new ArrayList<>();
+        loadJobDTOS.stream().map(LoadJobDTO::logoUrl).forEach(url -> {
+            try {
+                logoNames.add(downloadAndSaveLogoFromUrl(url));
+            } catch (IOException | URISyntaxException e) {
+                log.error("Something happen and logo cannot download: " + e);
+                logoNames.add("");
+                throw new RuntimeException(e);
+            }
+        });
+
+        List<Job> jobs = new ArrayList<>();
+
+        for (int i = 0; i < loadJobDTOS.size(); i++) {
+            Job job = jobMapper.toEntity(loadJobDTOS.get(i).dto());
+            job.setPostedDate(job.getApplicationDeadline().minusMonths(1));
+            job.setCompanyLogo(logoNames.get(i));
+
+            jobs.add(job);
+        }
+
+        repository.saveAll(jobs);
     }
 
     public List<Job> findAll() {
@@ -63,10 +94,10 @@ public class JobService {
     public Job update(Long id, JobDTO dto, MultipartFile logo) throws IOException {
         Job oldJob = findById(id);
 
-        if ((oldJob.getCompanyLogo() == null && logo == null) || isSameContent(logo, oldJob.getCompanyLogo())) {
+        if (logo == null || isSameContent(logo, oldJob.getCompanyLogo())) {
             jobMapper.updateJobFromDto(dto, oldJob);
             repository.save(oldJob);
-        } else if (oldJob.getCompanyLogo() == null && !logo.isEmpty()) {
+        } else if (!logo.isEmpty()) {
             jobMapper.updateJobFromDto(dto, oldJob);
             oldJob.setCompanyLogo(addLogo(logo));
 
@@ -200,9 +231,10 @@ public class JobService {
         if (sortByMinSalary) comparator = Comparator.comparing(Job::getMinSalary);
         if (sortByMaxSalary) comparator = Comparator.comparing(Job::getMaxSalary);
 
-        if (sortInDescendingOrder) comparator = comparator.reversed();
-
         listOfJob.sort(comparator);
+
+        if (sortInDescendingOrder) return listOfJob.reversed();
+
         return listOfJob;
     }
 
@@ -218,6 +250,37 @@ public class JobService {
         Files.copy(logo.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         return fileName;
+    }
+
+    public String downloadAndSaveLogoFromUrl(String imageUrl) throws IOException, URISyntaxException {
+        URI uri = new URI(imageUrl);
+        URL url = uri.toURL();
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setConnectTimeout(5000);
+        connection.setReadTimeout(5000);
+
+        try (InputStream in = connection.getInputStream()) {
+            Path uploadDir = Paths.get("uploads");
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+            }
+
+            String fileExtension = imageUrl.substring(imageUrl.lastIndexOf('.'));
+            if (fileExtension.contains("?") ||
+                fileExtension.contains("$") ||
+                fileExtension.contains("=")) {
+                fileExtension = "Default_Name.png";
+            }
+            String fileName = UUID.randomUUID() + "_" + fileExtension;
+            Path filePath = uploadDir.resolve(fileName);
+
+            Files.copy(in, filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            return fileName;
+        } finally {
+            connection.disconnect();
+        }
     }
 
     public boolean isSameContent(MultipartFile multipartFile, String existingFileName) throws IOException {
