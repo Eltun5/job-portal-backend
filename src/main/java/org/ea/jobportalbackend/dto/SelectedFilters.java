@@ -1,6 +1,5 @@
 package org.ea.jobportalbackend.dto;
 
-import org.ea.jobportalbackend.model.Tag;
 import org.ea.jobportalbackend.model.enums.ExperienceLevel;
 import org.ea.jobportalbackend.model.enums.JobType;
 

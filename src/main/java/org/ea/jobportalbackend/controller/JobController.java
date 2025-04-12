@@ -45,16 +45,6 @@ public class JobController {
             @RequestParam(defaultValue = "false") boolean sortByMaxSalary,
             @RequestParam(defaultValue = "false") boolean sortInDescendingOrder) {
 
-        log.error("\nlocations " + locations + "\n" +
-                  "jobTypes " + jobTypes + "\n" +
-                  "experienceLevels " + experienceLevels + "\n" +
-                  "industries " + industries + "\n" +
-                  "tags " + tags + "\n" +
-                  "sortByPostDate " + sortByPostDate + "\n" +
-                  "sortByMinSalary " + sortByMinSalary + "\n" +
-                  "sortByMaxSalary " + sortByMaxSalary + "\n" +
-                  "sortInDescendingOrder " + sortInDescendingOrder
-        );
         JobResponseDTO allOrFilteredData = service.getAllOrFilteredData(locations, jobTypes,
                 experienceLevels, industries, tags, sortByPostDate,
                 sortByMinSalary, sortByMaxSalary, sortInDescendingOrder);
